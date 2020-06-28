@@ -30,45 +30,48 @@ import os
 import sys
 import glob
 
-def decode(vid_dir='videos', frame_dir='frames'):
+
+def decode(vid_dir='videos', frame_dir='frames\\'):
   """Using the videos downloaded in `vid_dir`, produce decoded frames in
   `frame_dir`.
   """
 
   # List the datasets
   d_sets = [f.path for f in os.scandir(vid_dir) if f.is_dir() ]
-
   # For each dataset
   for d_set in d_sets:
 
     # List the classes
     classes = [f.path for f in os.scandir(d_set) if f.is_dir() ]
-
+    classes = [0]
     # For each class
     for class_ in classes:
 
       # List the clips
-      clips = [f.path for f in os.scandir(class_) ]
+      clips = [f.path for f in os.scandir(d_set) ]
 
       # For each clip, where clip is the path to the clip
       for clip in clips:
+        print(clip)
         clip_sub_dir = (clip.replace(vid_dir,''))[:-4]
         clip_out_dir = frame_dir + clip_sub_dir
-        clip_name    = clip.split('/')[-1][:-4]
+        clip_name    = clip.split('\\')[-1][:-4]
 
         # Change to the class directory (where the clip is)
-        os.chdir(class_)
+        cwdir = os.getcwd()
+        os.chdir(d_set)
 
         # Decode the video into 30 fps frames with ffmpeg
         check_call(['ffmpeg', '-i', 'file:'+clip_name+'.mp4', '-vf', 'fps=30',
                     'frame_%06d.jpg'])
-
+        os.chdir(cwdir )
         # Create a directory for this clip
-        check_call(['mkdir', '-p', clip_out_dir])
+        print(clip_out_dir)
+        check_call(['if', 'not', 'exist', clip_out_dir, 'mkdir', clip_out_dir], shell=True)
 
         # Move the results to the output directory
-        for jpg in glob.glob('*.jpg'):
-          check_call(['mv', jpg, clip_out_dir])
+        # for jpg in glob.glob('*.jpg'):
+        check_call(['move', d_set+'\\*.jpg', clip_out_dir, '>nul'], shell=True)
 
 if __name__ == '__main__':
   decode(*sys.argv[1:])

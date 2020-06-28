@@ -25,14 +25,15 @@ import sys
 import csv
 
 # Debug flag. Set this to true if you would like to see ffmpeg errors
-debug = False
+debug = True
 
 # The data sets to be downloaded
 d_sets = [
-          'yt_bb_detection_train',
-          'yt_bb_detection_validation',
-          'yt_bb_classification_train',
-          'yt_bb_classification_validation',
+          'youtube_boundingboxes_detection_train'
+          # 'yt_bb_detection_train',
+          # 'yt_bb_detection_validation',
+          # 'yt_bb_classification_train',
+          # 'yt_bb_classification_validation',
           ]
 
 # The classes included and their indices
@@ -97,8 +98,14 @@ class video(object):
   def __init__(self,yt_id,first_clip):
     self.yt_id = yt_id
     self.clips = [first_clip]
+    self.start = first_clip.start
+    self.stop = first_clip.stop
+  def append(self, new_clip):
+    self.clips.append(new_clip)
+    self.start = str(min(int(self.start), int(new_clip.start)))
+    self.stop = str(max(int(self.stop), int(new_clip.stop)))
   def print_all(self):
-    print(self.yt_id)
+    print(self.yt_id+" "+self.start+" -> "+self.stop)
     for clip in self.clips:
       clip.print_all()
 
@@ -157,7 +164,7 @@ def dl_and_cut(vid):
     if os.path.exists(d_set_dir+'/'+vid.yt_id+'_temp.mp4'):
       # Make the class directory if it doesn't exist yet
       class_dir = d_set_dir+'/'+str(clip.class_id)
-      check_call(' '.join(['mkdir', '-p', class_dir]), shell=True)
+      check_call(['if', 'not', 'exist', class_dir, 'mkdir', class_dir], shell=True)
 
       # Cut out the clip within the downloaded video and save the clip
       # in the correct class directory. Full re-encoding is used to maintain
@@ -192,13 +199,13 @@ def parse_annotations(d_set,dl_dir):
   d_set_dir = dl_dir+'/'+d_set+'/'
 
   # Download & extract the annotation list
-  if not os.path.exists(d_set+'.csv'):
-    print (d_set+': Downloading annotations...')
-    check_call(' '.join(['wget', web_host+d_set+'.csv.gz']),shell=True)
-    print (d_set+': Unzipping annotations...')
-    check_call(' '.join(['gzip', '-d', '-f', d_set+'.csv.gz']), shell=True)
+  # if not os.path.exists(d_set+'.csv'):
+  #   print (d_set+': Downloading annotations...')
+  #   check_call(' '.join(['wget', web_host+d_set+'.csv.gz']),shell=True)
+  #   print (d_set+': Unzipping annotations...')
+  #   check_call(' '.join(['gzip', '-d', '-f', d_set+'.csv.gz']), shell=True)
 
-  print (d_set+': Parsing annotations into clip data...')
+  # print (d_set+': Parsing annotations into clip data...')
 
   # Parse csv data.
   annotations = []
@@ -279,7 +286,7 @@ def parse_annotations(d_set,dl_dir):
     # If this is a new clip for the same video
     else:
       # Add the new clip to the video
-      vids[-1].clips.append(clip)
+      vids[-1].append(clip)
 
     # Update the current video name
     current_vid_id = vid_id
@@ -287,10 +294,10 @@ def parse_annotations(d_set,dl_dir):
   return annotations,clips,vids
 
 def sched_downloads(d_set,dl_dir,num_threads,vids):
-  d_set_dir = dl_dir+'/'+d_set+'/'
+  d_set_dir = dl_dir+'\\'+d_set+'\\'
 
   # Make the directory for this dataset
-  check_call(' '.join(['mkdir', '-p', d_set_dir]), shell=True)
+  check_call(['if', 'not', 'exist', d_set_dir, 'mkdir', d_set_dir], shell=True)
 
   # Tell the user when downloads were started
   datetime.now().strftime("%Y-%m-%d %H:%M:%S")
