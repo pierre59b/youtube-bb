@@ -43,23 +43,23 @@ def decode(vid_dir='videos', frame_dir='frames\\'):
 
     # List the classes
     classes = [f.path for f in os.scandir(d_set) if f.is_dir() ]
-    classes = [0]
     # For each class
     for class_ in classes:
 
       # List the clips
-      clips = [f.path for f in os.scandir(d_set) ]
+      clips = [f.path for f in os.scandir(class_) ]
 
       # For each clip, where clip is the path to the clip
       for clip in clips:
         print(clip)
         clip_sub_dir = (clip.replace(vid_dir,''))[:-4]
-        clip_out_dir = frame_dir + clip_sub_dir
+        # clip_out_dir = frame_dir + clip_sub_dir
+        clip_out_dir  = frame_dir
         clip_name    = clip.split('\\')[-1][:-4]
 
         # Change to the class directory (where the clip is)
         cwdir = os.getcwd()
-        os.chdir(d_set)
+        os.chdir(class_)
 
         # Decode the video into 30 fps frames with ffmpeg
         check_call(['ffmpeg', '-i', 'file:'+clip_name+'.mp4', '-vf', 'fps=30',
